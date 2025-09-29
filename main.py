@@ -1,13 +1,13 @@
-from agent.agent import Agent
+from session.session import Session
 
 
 def main():
-    agent = Agent("gpt-4o")
+    ses = Session("gpt-4o")
     while True:
         user_input = input("USER: ")
         if user_input.lower() == ".exit":
             break
-        ai_msg = agent.invoke(user_input)
+        ai_msg = ses.invoke(user_input)
         print(f"AI: {ai_msg}")
 
 

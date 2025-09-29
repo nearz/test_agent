@@ -1,26 +1,33 @@
+from dataclasses import dataclass
 from typing import Annotated, TypedDict, Sequence
 from langchain_core.messages import BaseMessage, SystemMessage, AIMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END, START
-from langgraph.graph.state import Runnable
 from langgraph.prebuilt import ToolNode
+from langgraph.runtime import Runtime
 
 from .tools import get_tools
+from .model import get_model_with_tools
 
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
-    llm: Runnable
 
 
-def call_llm(state: AgentState) -> AgentState:
+@dataclass
+class ContextSchema:
+    llm: str
+
+
+def call_llm(state: AgentState, runtime: Runtime[ContextSchema]) -> AgentState:
     system_prompt = SystemMessage(
         "You are an AI assistant, please answer my query to the best of your ability."
     )
+    llm = get_model_with_tools(runtime.context.llm)
     all_msgs = [system_prompt] + list(state["messages"])
-    response = state["llm"].invoke(all_msgs)
-    return {"messages": list(state["messages"]) + [response], "llm": state["llm"]}
+    response = llm.invoke(all_msgs)
+    return {"messages": [response]}
 
 
 def should_continue(state: AgentState) -> bool:
@@ -33,7 +40,7 @@ def should_continue(state: AgentState) -> bool:
 
 
 def build_graph():
-    graph = StateGraph(AgentState)
+    graph = StateGraph(AgentState, context_schema=ContextSchema)
     graph.add_node("call_llm", call_llm)
     graph.add_node("tools", ToolNode(tools=get_tools()))
 

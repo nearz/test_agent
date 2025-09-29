@@ -2,14 +2,22 @@ import os
 from typing import List
 from langchain_core.tools import tool, BaseTool
 
+_TOOLS_REGISTRY = []
 
-@tool
+
+def register_tool(func):
+    decorated = tool(func)
+    _TOOLS_REGISTRY.append(decorated)
+    return decorated
+
+
+@register_tool
 def list_files() -> List[str]:
     """Function that lists the files of the current working directory"""
     return os.listdir(".")
 
 
-@tool
+@register_tool
 def read_file(filename: str) -> str:
     """Read the contents of a file from the current working directory.
 
@@ -33,4 +41,4 @@ def read_file(filename: str) -> str:
 
 
 def get_tools() -> List[BaseTool]:
-    return [list_files, read_file]
+    return _TOOLS_REGISTRY.copy()
