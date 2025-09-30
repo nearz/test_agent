@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Annotated, TypedDict, Sequence
 from langchain_core.messages import BaseMessage, SystemMessage, AIMessage
-from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END, START
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import ToolNode
 from langgraph.runtime import Runtime
 
@@ -32,13 +32,15 @@ def call_llm(state: AgentState, runtime: Runtime[ContextSchema]) -> AgentState:
 
 def should_continue(state: AgentState) -> bool:
     last_msg = state["messages"][-1]
+    tool_call = False
     if isinstance(last_msg, AIMessage):
-        if not last_msg.tool_calls:
-            return False
-        else:
-            return True
+        if last_msg.tool_calls:
+            tool_call = True
+            return tool_call
+    return tool_call
 
 
+# NOTE: Return type of compile?
 def build_graph():
     graph = StateGraph(AgentState, context_schema=ContextSchema)
     graph.add_node("call_llm", call_llm)
@@ -55,4 +57,6 @@ def build_graph():
     )
     graph.add_edge("tools", "call_llm")
 
-    return graph.compile()
+    # NOTE: Change to SQLite.
+    checkpointer = InMemorySaver()
+    return graph.compile(checkpointer=checkpointer)

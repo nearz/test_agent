@@ -1,20 +1,19 @@
 from langchain_core.messages import HumanMessage
 
-from agent.state import build_graph
-
 
 class Session:
-    def __init__(self, model: str):
+    def __init__(self, model: str, thread_id: str, graph):
         self.id = "temp"
+        self.thread_id = thread_id
         self.model = model
-        self.history = []
-        self.graph = build_graph()
+        # NOTE: Maybe move graph to app level so it is compiled once on app start up?
+        self.graph = graph
 
     def invoke(self, input: str):
         msg = HumanMessage(content=input)
-        self.history.append(msg)
-        result = self.graph.invoke(
-            {"messages": self.history}, context={"llm": self.model}
-        )
-        self.history = result["messages"]
-        return self.history[-1].content
+
+        config = {"configurable": {"thread_id": self.thread_id}}
+        context = {"llm": self.model}
+
+        result = self.graph.invoke({"messages": [msg]}, config=config, context=context)
+        return result["messages"][-1].content

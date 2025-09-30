@@ -1,8 +1,12 @@
 from session.session import Session
+from agent.state import build_graph
 
 
 def main():
-    ses = Session("gpt-4o")
+    graph = build_graph()
+    llm = "gpt-4o"
+    thread_id = "1"
+    ses = Session(llm, thread_id, graph)
     while True:
         user_input = input("USER: ")
         if user_input.lower() == ".exit":
