@@ -3,9 +3,10 @@ from agent.state import build_graph
 
 
 def main():
+    # NOTE: Graph build may be app level
     graph = build_graph()
     llm = "gpt-4o"
-    thread_id = "1"
+    thread_id = "2"
     ses = Session(llm, thread_id, graph)
     while True:
         user_input = input("USER: ")

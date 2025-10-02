@@ -1,14 +1,21 @@
+from uuid import uuid4
 from dataclasses import dataclass
 from typing import Annotated, TypedDict, Sequence
 from langchain_core.messages import BaseMessage, SystemMessage, AIMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END, START
-from langgraph.checkpoint.memory import InMemorySaver
+
+# from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.prebuilt import ToolNode
 from langgraph.runtime import Runtime
 
+import sqlite3
+
 from .tools import get_tools
 from .model import get_model_with_tools
+
+# TODO: Add message ID after SQLite
 
 
 class AgentState(TypedDict):
@@ -27,6 +34,7 @@ def call_llm(state: AgentState, runtime: Runtime[ContextSchema]) -> AgentState:
     llm = get_model_with_tools(runtime.context.llm)
     all_msgs = [system_prompt] + list(state["messages"])
     response = llm.invoke(all_msgs)
+    print("AII: ", response.id)
     return {"messages": [response]}
 
 
@@ -57,6 +65,6 @@ def build_graph():
     )
     graph.add_edge("tools", "call_llm")
 
-    # NOTE: Change to SQLite.
-    checkpointer = InMemorySaver()
+    conn = sqlite3.connect("checkpoints.db", check_same_thread=False)
+    checkpointer = SqliteSaver(conn)
     return graph.compile(checkpointer=checkpointer)

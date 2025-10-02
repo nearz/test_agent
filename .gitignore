@@ -1,1 +1,5 @@
 venv/
+todo.md
+checkpoints.db
+__pycache__/
+*.py[cod]

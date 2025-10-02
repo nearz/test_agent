@@ -11,6 +11,7 @@ class Session:
 
     def invoke(self, input: str):
         msg = HumanMessage(content=input)
+        print("HID: ", msg.id)
 
         config = {"configurable": {"thread_id": self.thread_id}}
         context = {"llm": self.model}
